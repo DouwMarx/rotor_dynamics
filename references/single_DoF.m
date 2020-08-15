@@ -24,8 +24,8 @@ f=10;                           % force amplitude
 mu=5.71;                        % kinematics of fundamental excitation
 w0=50;                          % rotational speed of the shaft
 dw=20;                          % speed ramp
-typ='Time';                     % integration type 'Angl' or 'Time'
-%typ='Angl';
+%typ='Time';                     % integration type 'Angl' or 'Time'
+typ='Angl';
 %
 % --- state space representation
 %
@@ -35,13 +35,13 @@ B=[0; 1/M];
 % --- modal characteristics
 %
 [Vec Lamb]=eig(A);
-alpha=-real(Lamb(1))/abs(Lamb(1));
+alpha=-real(Lamb(1))/abs(Lamb(1))
 %
 % ---- Initial conditions
 %
 R0=zeros(3,1);                  % initial conditions
-%Xm=50;                         % simulation duration (s) or (rad)
-Xm=1;                           % simulation duration (s) or (rad)
+Xm=50;                         % simulation duration (s) or (rad)
+%Xm=1;                           % simulation duration (s) or (rad)
 %
 % ---- Resolution
 %
@@ -57,6 +57,9 @@ else
     gamma=1/M*(-C*R(:,2)-K*R(:,1)+f*cos(mu*X));
 end
 %
+figure
+plot(X, R)
+
 figure
 plot(X,gamma)
 grid on
