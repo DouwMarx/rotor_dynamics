@@ -35,7 +35,7 @@ B=[0; 1/M];
 % --- modal characteristics
 %
 [Vec Lamb]=eig(A);
-alpha=-real(Lamb(1))/abs(Lamb(1))
+alpha=-real(Lamb(1))/abs(Lamb(1)) % Damping related? 
 %
 % ---- Initial conditions
 %
