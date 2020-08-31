@@ -3,9 +3,21 @@ import os
 import matplotlib.pyplot as plt
 
 class SignalProcessing(object):
-    def __init__(self, xrange, gamma):
-        self.xrange = xrange
-        self.gamma = gamma
+    def __init__(self, xrange, omega, gamma, operating_condition_object):
+        wi = operating_condition_object.w0
+        dw = operating_condition_object.dw
+
+        wf = wi + dw
+
+        index_at_wf = np.argmax(omega>wf)  # Find the index at which the desired speed is reached
+        #print("Angle range was ", 100*(1-(index_at_wf/len(xrange))),"% too long")
+        # This will give an error if simulation time is nog long enough
+
+
+
+        self.xrange = xrange[0:index_at_wf]
+        self.omega = omega[0:index_at_wf]
+        self.gamma = gamma[0:index_at_wf]
         self.fs = 1 / np.average(np.diff(self.xrange))
 
     def plot_signal(self):
@@ -15,24 +27,25 @@ class SignalProcessing(object):
         plt.ylabel("Acceleration [$m/s^2$]")
         plt.show()
 
-    def show_time_domain_resonance(self,gamma,omega,omega_nat_div_mu,save_name =None):
+    def show_time_domain_resonance(self, omega_nat_div_mu, save_name=None):
+
         fig, axs = plt.subplots(2)
-        axs[0].plot(self.xrange, omega)
+        axs[0].plot(self.xrange, self.omega)
         axs[0].set_ylabel(r"$\dot \theta_1$")
-        angle_at_nat_freq = self.xrange[np.argmax(omega > omega_nat_div_mu)]
+        angle_at_nat_freq = self.xrange[np.argmax(self.omega > omega_nat_div_mu)]
         axs[0].hlines(omega_nat_div_mu, self.xrange[0],angle_at_nat_freq, colors="k",linestyles="--")
         axs[0].text(0.33*angle_at_nat_freq,
                     1.1*omega_nat_div_mu,
-                    r"$\dot \theta_1 = \frac{\omega_n}{\mu}$",
+                    r"$\dot \theta_1 = \frac{\omega_d}{\mu}$",
                     fontsize = 14)
-        min_omega = np.min(omega)*0.9
+        min_omega = np.min(self.omega)*0.9
         axs[0].vlines(angle_at_nat_freq,min_omega, omega_nat_div_mu, colors="k",linestyles="--")
         axs[0].set_ylim(min_omega,None)
 
-        axs[1].plot(self.xrange, gamma)
+        axs[1].plot(self.xrange, self.gamma)
         axs[1].set_ylabel(r"$\ddot \theta_1$")
-        gamma_max = np.max(gamma)
-        gamma_min = np.min(gamma)
+        gamma_max = np.max(self.gamma)
+        gamma_min = np.min(self.gamma)
 
         axs[1].vlines(angle_at_nat_freq, gamma_min, gamma_max, colors="k",linestyles="--")
         plt.ylim(gamma_min,gamma_max)
@@ -85,7 +98,7 @@ class SignalProcessing(object):
         """
         freq, mag, phase = self.fft()
         plt.figure()
-        plt.semilogy(freq * np.pi * 2, 2*mag, "k")  # mag is single-sided magnitude
+        plt.semilogy(freq * np.pi * 2, 2*mag)  # mag is single-sided magnitude
         plt.xlim(0, xlim_max)
         #plt.ylim
         plt.ylabel("Spectral Amplitude")
@@ -102,7 +115,7 @@ class SignalProcessing(object):
                        linestyles='--',
                        colors='k',
                        zorder=10,
-                       label= "Expected resonance band")
+                       label= "Expected \n resonance \n band")
         if excitation_mu:
             max_height = np.max(2 * mag)
             min_height = 0.095
@@ -112,7 +125,8 @@ class SignalProcessing(object):
                        linestyles='-.',
                        colors='k',
                        zorder=10,
-                       label= "Kinematics of fundamental excitation")
+                       label= "Fundamental \n excitation")
+            plt.ylim(min_height,max_height)
         plt.legend()
 
         if save_name:
@@ -123,3 +137,6 @@ class SignalProcessing(object):
 
     def get_max_mag(self):
         return np.max(np.abs(self.gamma))
+
+    def get_rms(self):
+        return np.sqrt(np.mean(self.gamma**2))

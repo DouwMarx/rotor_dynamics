@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import src.rotor_problem as rp
 import src.signal_processing as sigproc
 import numpy as np
+from tqdm import tqdm
 
 
 
@@ -14,7 +15,7 @@ def response_surface(parameters, constants_dict):
     # gradient is computed
     I1 = parameters[0]*grad_eval_loc[0]  # kgm^2
     I2 = parameters[1]*grad_eval_loc[1] # kgm^2
-    c =  parameters[2]*grad_eval_loc[2] # Nms/rad
+    c = parameters[2]*grad_eval_loc[2] # Nms/rad
     k = parameters[3]*grad_eval_loc[3]  # Nm/rad
 
     M = np.array([[I1, 0], [0, I2]])  # Mass matrix
@@ -23,17 +24,17 @@ def response_surface(parameters, constants_dict):
 
     # Define the operating conditions
     # ======================================================================================================================
-    mu = 5.71  # [ev/rev] kinematics of fundamental excitation
-    T_0 = 1  # [N/m] Applied torque
+    mu = 4.7  # [ev/rev] kinematics of fundamental excitation
+    T_0 = constants_dict["operating_conditions"]["T_0"]  # [N/m] Applied torque
     T_theta_amplitude = 1  # Amplitude of cyclic excitation
 
-    w0 = 50  # This means excitation frequency is @ mu*w0/(2*pi) -> mu*(w0+dw)/(2*pi), 45Hz -> 63Hz
-    dw = 20
+    w0 = 20  # This means excitation frequency is @ mu*w0/(2*pi) -> mu*(w0+dw)/(2*pi), 45Hz -> 63Hz
+    dw = 40
     operating_conditions = rp.OperatingConditions(w0, dw,T_0,T_theta_amplitude, mu)
 
     # Define initial conditions
     # ======================================================================================================================
-    R0 = np.array([0,0,20,20])  # [theta_1,theta_2,theta_dot_1,theta_dot_2]
+    R0 = np.array([T_0 / k, 0, w0, w0])  # [theta_1,theta_2,theta_dot_1,theta_dot_2]
 
     # Define a lumped mass model from the selected model parameters
     # ======================================================================================================================
@@ -41,20 +42,24 @@ def response_surface(parameters, constants_dict):
 
     # Define initial conditions and other solver parameters
     # ======================================================================================================================
-    x_range = np.linspace(0, 50, 2 ** 14)  # Simulate for theta 0 -> 50 rad
+    x_range = np.linspace(0, 90, 2 ** 16)  # Simulate for theta 0 -> 50 rad
     solver_parameters = {"x_range": x_range,
                          "initial_condition": R0,
                          "method": "RK45"}
 
-    # Solve for accelerations
-    # ======================================================================================================================
-    gamma = lmm.get_gamma(solver_parameters)
 
     # Create a signal processing object to investigate the response of mass 1
     # ======================================================================================================================
-    proc = sigproc.SignalProcessing(x_range, gamma[0, :])
-    return proc.get_max_mag() # Return the maximum acceleration value
+    sol = lmm.solve_sys(solver_parameters)
+    gamma = lmm.get_gamma(sol, solver_parameters)
 
+    omega_0 = sol[2, :]
+    #gamma = gamma[0, :]
+    gamma = gamma[1, :]
+    proc = sigproc.SignalProcessing(x_range, omega_0, gamma, operating_conditions)
+
+    #return proc.get_max_mag()  # Return the maximum acceleration value
+    return proc.get_rms()
 
 
 def compute_grad_for_sys(constants_dict):
@@ -66,18 +71,28 @@ def compute_grad_for_sys(constants_dict):
                              constants_dict)
     return grad
 
-def compute_grad_for_sys_param_change(save_name = None):
-    param_range = np.linspace(0,0.1,10)
+def compute_grad_for_T0_change(save_name = None):
 
-    #pltlist = [opt.approx_fprime(np.array([I1+par0,I2,c,k]),testfunc,eps) for par0 in param_0_range]
+    param_range = np.linspace(10, 20, 100)
+    I1 = 0.1  # kgm^2
+    I2 = 0.2  # kgm^2
+    c = 0.05  # Nms/rad
+    k = 2500  # Nm/rad
+
     plt_list = []
-    for param in param_range:
-        constants_dict = {"parameters_at_gradient_evaluation": np.array([I1+param,I2,c,k])}
+    for param in tqdm(param_range):
+        constants_dict = {"parameters_at_gradient_evaluation": np.array([I1,I2,c,k]),
+                          "operating_conditions": {"T_0": param}}
         plt_list.append(compute_grad_for_sys(constants_dict))
 
     plt.figure()
-    plt.plot(plt_list)
-    plt.legend(["I1","I2","c","k"])
+    plt.plot(param_range,plt_list)
+    plt.legend([r"$\frac{\partial y_1}{\partial I_1}$",
+                r"$\frac{\partial y_1}{\partial I_2}$",
+                r"$\frac{\partial y_1}{\partial c}$",
+                r"$\frac{\partial y_1}{\partial k}$"])
+    plt.xlabel(r"$T_0$")
+    plt.ylabel(r"Partial derivative of $y$, y=rms($\ddot \theta_1$)")
 
     if save_name:
         repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -86,12 +101,12 @@ def compute_grad_for_sys_param_change(save_name = None):
     return plt_list
 
 
-I1 = 0.1  # kgm^2
-I2 = 0.2  # kgm^2
-c = 0.05  # Nms/rad
-k = 2500  # Nm/rad
-parameters_at_gradient_evaluation = np.array([I1, I2, c, k])
-
-constants_dict = {"parameters_at_gradient_evaluation": parameters_at_gradient_evaluation}
-print(compute_grad_for_sys(constants_dict))
+# I1 = 0.1  # kgm^2
+# I2 = 0.2  # kgm^2
+# c = 0.05  # Nms/rad
+# k = 2500  # Nm/rad
+# parameters_at_gradient_evaluation = np.array([I1, I2, c, k])
+#
+# constants_dict = {"parameters_at_gradient_evaluation": parameters_at_gradient_evaluation}
+# print(compute_grad_for_sys(constants_dict))
 

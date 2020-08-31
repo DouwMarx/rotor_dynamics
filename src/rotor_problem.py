@@ -123,7 +123,7 @@ class LMMsys(object):
         self.sol = sol
         return sol.y
 
-    def get_gamma(self, solver_parameters):
+    def get_gamma(self, sol, solver_parameters):
         """
         Calculates accelerations from computed displacements and velocities
         Parameters
@@ -134,7 +134,7 @@ class LMMsys(object):
         -------
         gamma: Angular accelerations
         """
-        sol = self.solve_sys(solver_parameters)
+        # sol = self.solve_sys(solver_parameters)
 
         T1 = np.dot(self.K, sol[0:self.dof, :])
         T2 = np.dot(self.C, sol[self.dof:, :])
