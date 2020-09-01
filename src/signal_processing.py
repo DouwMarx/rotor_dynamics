@@ -3,17 +3,17 @@ import os
 import matplotlib.pyplot as plt
 
 class SignalProcessing(object):
-    def __init__(self, xrange, omega, gamma, operating_condition_object):
+    def __init__(self, xrange, omega, gamma, operating_condition_object,id_at_wf = True):
         wi = operating_condition_object.w0
         dw = operating_condition_object.dw
 
         wf = wi + dw
-
-        index_at_wf = np.argmax(omega>wf)  # Find the index at which the desired speed is reached
-        #print("Angle range was ", 100*(1-(index_at_wf/len(xrange))),"% too long")
-        # This will give an error if simulation time is nog long enough
-
-
+        if id_at_wf:
+            index_at_wf = np.argmax(omega>wf)  # Find the index at which the desired speed is reached
+            # print("Angle range was ", 100*(1-(index_at_wf/len(xrange))),"% too long")
+            # This will give an error if simulation time is nog long enough
+        else:
+            index_at_wf = len(xrange)
 
         self.xrange = xrange[0:index_at_wf]
         self.omega = omega[0:index_at_wf]

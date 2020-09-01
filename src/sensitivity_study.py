@@ -8,7 +8,6 @@ import numpy as np
 from tqdm import tqdm
 
 
-
 def response_surface(parameters, constants_dict):
     # See "3_2dof-given-problem for wel documented code for what follows
     grad_eval_loc = constants_dict["parameters_at_gradient_evaluation"] # The location in the parameters space where
@@ -54,16 +53,14 @@ def response_surface(parameters, constants_dict):
     gamma = lmm.get_gamma(sol, solver_parameters)
 
     omega_0 = sol[2, :]
-    #gamma = gamma[0, :]
+    #gamma = gamma[0, :] # Change this to change between I_1 and I_2
     gamma = gamma[1, :]
     proc = sigproc.SignalProcessing(x_range, omega_0, gamma, operating_conditions)
 
     #return proc.get_max_mag()  # Return the maximum acceleration value
     return proc.get_rms()
 
-
 def compute_grad_for_sys(constants_dict):
-
     eps = np.sqrt(np.finfo(float).eps)  # Increment used to determine finite differences
     grad = opt.approx_fprime(np.ones(np.shape(constants_dict["parameters_at_gradient_evaluation"])),
                              response_surface,
@@ -99,14 +96,4 @@ def compute_grad_for_T0_change(save_name = None):
         plt.savefig(repo_dir + "\\reports\\" + save_name)
     plt.show()
     return plt_list
-
-
-# I1 = 0.1  # kgm^2
-# I2 = 0.2  # kgm^2
-# c = 0.05  # Nms/rad
-# k = 2500  # Nm/rad
-# parameters_at_gradient_evaluation = np.array([I1, I2, c, k])
-#
-# constants_dict = {"parameters_at_gradient_evaluation": parameters_at_gradient_evaluation}
-# print(compute_grad_for_sys(constants_dict))
 
