@@ -1,4 +1,4 @@
-### Code generated for ESR4 recruitment procedure
+### Code generated for ESR4: Eco drive, Advanced angular models and experimental tools for lightweight transmission line design recruitment procedure
 
 This file lists the content of the project folder.
 
